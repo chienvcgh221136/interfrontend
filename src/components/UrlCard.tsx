@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Trash2, QrCode, BarChart3, Check, ExternalLink } from 'lucide-react';
+import { Copy, Trash2, QrCode, BarChart3, Check, ExternalLink, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QRCodeModal } from './QRCodeModal';
 import toast from 'react-hot-toast';
@@ -13,6 +13,7 @@ interface UrlCardProps {
   createdAt: string;
   customDomain?: string;
   onDelete: (id: string) => void;
+  onEdit: (url: UrlCardProps) => void;
   onViewAnalytics?: (shortCode: string) => void;
 }
 
@@ -24,6 +25,7 @@ export function UrlCard({
   createdAt,
   customDomain,
   onDelete,
+  onEdit,
   onViewAnalytics,
 }: UrlCardProps) {
   const [copied, setCopied] = useState(false);
@@ -106,6 +108,15 @@ export function UrlCard({
                   <span className="ml-1.5 hidden sm:inline">Stats</span>
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit({ id, originalUrl, shortCode, clicks, createdAt, customDomain, onDelete, onEdit, onViewAnalytics })}
+                className="h-8 px-3"
+              >
+                <Edit className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">Edit</span>
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

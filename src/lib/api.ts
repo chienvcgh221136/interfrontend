@@ -11,23 +11,46 @@ const api = axios.create({
 
 // Add token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Handle token expiration
+// Handle token expiration and refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-      localStorage.removeItem('id');
-      localStorage.removeItem('username');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+    // If the error is 401 and it's not a retry request
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          const response = await axios.post(`${API_URL}/api/user/refresh-token`, { token: refreshToken });
+          const { accessToken } = response.data;
+          localStorage.setItem('accessToken', accessToken);
+          // Update the authorization header and retry the original request
+          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          // If refresh token is invalid, logout user
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // No refresh token, just logout
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -42,6 +65,7 @@ export const authApi = {
     api.post('/api/user/login', data),
   googleLogin: (data: { token: string }) =>
     api.post('/api/user/google-login', data),
+  getProfile: () => api.get('/api/user/me'),
   
   // Admin
   adminLogin: (data: { username: string; password: string }) =>
@@ -54,6 +78,8 @@ export const urlApi = {
     api.post('/api/url/shorten', data),
   shortenCustom: (data: { originalUrl: string; customCode: string }) =>
     api.post('/api/url/custom', data),
+  update: (id: string, data: { originalUrl?: string; shortCode?: string }) =>
+    api.put(`/api/url/${id}`, data),
   getAll: () => api.get('/api/url'),
   delete: (id: string) => api.delete(`/api/url/${id}`),
 };

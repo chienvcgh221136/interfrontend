@@ -42,14 +42,7 @@ export default function Login() {
         password: userPassword,
       });
 
-      const { token, username } = response.data;
-      const decoded: any = jwtDecode(token);
-      
-      login(token, {
-        id: decoded.id,
-        username: username,
-        role: 'user',
-      });
+      login(response.data);
 
       toast.success('Welcome back!');
       navigate('/dashboard');
@@ -74,14 +67,7 @@ export default function Login() {
         password: adminPassword,
       });
 
-      const { token, username } = response.data;
-      const decoded: any = jwtDecode(token);
-      
-      login(token, {
-        id: decoded.id,
-        username: username,
-        role: 'admin',
-      });
+      login(response.data);
 
       toast.success('Welcome back, Admin!');
       navigate('/admin');
@@ -97,16 +83,9 @@ export default function Login() {
       // Send Google's token to our backend
       const response = await authApi.googleLogin({ token: credentialResponse.credential });
 
-      const { token, username } = response.data;
-      const decoded: any = jwtDecode(token); // Decode our app's token
+      login(response.data);
 
-      login(token, {
-        id: decoded.id,
-        username: username,
-        role: 'user',
-      });
-
-      toast.success(`Welcome, ${username}!`);
+      toast.success(`Welcome, ${response.data.user.username}!`);
       navigate('/dashboard');
     } catch (error: any) {
       console.error("Google Login Error:", error);

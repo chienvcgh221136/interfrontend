@@ -8,10 +8,9 @@ interface AuthUser {
 
 interface AuthContextType {
   user: AuthUser | null;
-  token: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (token: string, user: AuthUser) => void;
+  login: (data: { accessToken: string; refreshToken: string; user: AuthUser }) => void;
   logout: () => void;
 }
 
@@ -19,49 +18,40 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Load from localStorage on mount
-    const storedToken = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('role') as 'user' | 'admin' | null;
-    const storedId = localStorage.getItem('id');
-    const storedUsername = localStorage.getItem('username');
+    const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedRole && storedId && storedUsername) {
-      setToken(storedToken);
-      setUser({
-        id: storedId,
-        username: storedUsername,
-        role: storedRole,
-      });
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        localStorage.clear();
+      }
     }
   }, []);
 
-  const login = (newToken: string, newUser: AuthUser) => {
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('role', newUser.role);
-    localStorage.setItem('id', newUser.id);
-    localStorage.setItem('username', newUser.username);
+  const login = (data: { accessToken: string; refreshToken: string; user: AuthUser }) => {
+    setUser(data.user);
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
   };
 
   const logout = () => {
-    setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('id');
-    localStorage.removeItem('username');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    window.location.href = '/login'; // Redirect to login on logout
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
-        isAuthenticated: !!token,
+        isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
         login,
         logout,
