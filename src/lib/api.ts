@@ -76,6 +76,8 @@ export const authApi = {
 export const urlApi = {
   shorten: (data: { originalUrl: string }) =>
     api.post('/api/url/shorten', data),
+  shortenPublic: (data: { originalUrl: string }) =>
+    api.post('/api/url/shorten-public', data),
   shortenCustom: (data: { originalUrl: string; customCode: string }) =>
     api.post('/api/url/custom', data),
   getAll: () => api.get('/api/url'),

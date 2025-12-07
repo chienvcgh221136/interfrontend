@@ -53,9 +53,17 @@ export default function Index() {
         finalUrl = `${longUrl}${separator}${utmParams}`;
       }
 
-      const response = customCode
-        ? await urlApi.shortenCustom({ originalUrl: finalUrl, customCode })
-        : await urlApi.shorten({ originalUrl: finalUrl });
+      let response;
+      if (isAuthenticated) {
+        // Logged-in users can use custom codes
+        response = customCode
+          ? await urlApi.shortenCustom({ originalUrl: finalUrl, customCode })
+          : await urlApi.shorten({ originalUrl: finalUrl });
+      } else {
+        // Unauthenticated users use the public endpoint
+        // and cannot use custom codes from the homepage.
+        response = await urlApi.shortenPublic({ originalUrl: finalUrl });
+      }
 
       const newUrl: UrlData = {
         _id: Date.now().toString(),
@@ -78,6 +86,9 @@ export default function Index() {
 
   const handleDelete = async (id: string) => {
     setCreatedUrls((prev) => prev.filter((url) => url._id !== id));
+    // For unauthenticated users, just remove from local state.
+    // If you wanted to delete from DB for logged-in users, you'd call an API here
+    // but since these are temporary on the homepage, local removal is fine.
     toast.success('Link removed');
   };
 
@@ -201,34 +212,39 @@ export default function Index() {
             </button>
 
             {/* Advanced Options */}
-            {showAdvanced && (
-              <div className="space-y-4 animate-fade-in">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground text-left block">
-                      Custom back-half (optional)
-                    </label>
-                    <Input
-                      placeholder="my-custom-link"
-                      value={customCode}
-                      onChange={(e) => setCustomCode(e.target.value)}
-                    />
+            {showAdvanced &&
+              (isAuthenticated ? (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground text-left block">
+                        Custom back-half (optional)
+                      </label>
+                      <Input
+                        placeholder="my-custom-link"
+                        value={customCode}
+                        onChange={(e) => setCustomCode(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground text-left block flex items-center gap-2">
+                        Custom Domain
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">FREE</span>
+                      </label>
+                      <Input
+                        placeholder="https://your-domain.com"
+                        value={customDomain}
+                        onChange={(e) => setCustomDomain(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground text-left block flex items-center gap-2">
-                      Custom Domain
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">FREE</span>
-                    </label>
-                    <Input
-                      placeholder="https://your-domain.com"
-                      value={customDomain}
-                      onChange={(e) => setCustomDomain(e.target.value)}
-                    />
-                  </div>
+                  <UTMBuilder onUTMChange={setUtmParams} />
                 </div>
-                <UTMBuilder onUTMChange={setUtmParams} />
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-muted-foreground animate-fade-in">
+                  <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link> to use advanced options like custom links.
+                </p>
+              ))}
           </form>
 
           {/* Created URLs */}
@@ -246,6 +262,7 @@ export default function Index() {
                     createdAt={url.createdAt}
                     customDomain={customDomain || undefined}
                     onDelete={handleDelete}
+                    onEdit={() => toast('Please sign in to edit links.')}
                     onViewAnalytics={(code) => navigate(`/analytics/${code}`)}
                   />
                 ))}
