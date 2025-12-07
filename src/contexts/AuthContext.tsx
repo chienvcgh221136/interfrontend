@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authApi } from '@/lib/api';
 
 interface AuthUser {
   id: string;
@@ -10,6 +11,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isLoading: boolean;
   login: (data: { accessToken: string; refreshToken: string; user: AuthUser }) => void;
   logout: () => void;
 }
@@ -18,18 +20,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load from localStorage on mount
-    const storedUser = localStorage.getItem('user');
-
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.clear();
+    // Check if user is logged in on initial load
+    const checkLoggedIn = async () => {
+      const accessToken = localStorage.getItem('accessToken');
+      if (accessToken) {
+        try {
+          const response = await authApi.getProfile();
+          setUser(response.data);
+        } catch (error) {
+          // Token might be invalid or expired
+          setUser(null);
+          localStorage.clear();
+        }
       }
-    }
+      setIsLoading(false);
+    };
+
+    checkLoggedIn();
   }, []);
 
   const login = (data: { accessToken: string; refreshToken: string; user: AuthUser }) => {
@@ -53,13 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
+        isLoading,
         login,
         logout,
       }}
     >
-      {children}
+      {!isLoading && children}
     </AuthContext.Provider>
   );
+  
 }
 
 export function useAuth() {

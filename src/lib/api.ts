@@ -78,8 +78,6 @@ export const urlApi = {
     api.post('/api/url/shorten', data),
   shortenCustom: (data: { originalUrl: string; customCode: string }) =>
     api.post('/api/url/custom', data),
-  update: (id: string, data: { originalUrl?: string; shortCode?: string }) =>
-    api.put(`/api/url/${id}`, data),
   getAll: () => api.get('/api/url'),
   delete: (id: string) => api.delete(`/api/url/${id}`),
 };

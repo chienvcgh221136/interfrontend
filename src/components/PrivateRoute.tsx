@@ -6,10 +6,19 @@ interface PrivateRouteProps {
 }
 
 export function PrivateRoute({ children }: PrivateRouteProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  if (!isAuthenticated) {
+  if (isLoading) {
+    // Hiển thị một màn hình chờ trong khi xác thực
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated && !isLoading) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
