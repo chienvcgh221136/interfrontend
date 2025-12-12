@@ -35,8 +35,30 @@ export function UrlCard({
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
-  const baseUrl = customDomain || import.meta.env.VITE_API_URL || 'http://localhost:5000';
-  const shortUrl = `${baseUrl}/${shortCode}`;
+  const baseUrl = customDomain || import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  
+  let shortUrl = `${baseUrl}/${shortCode}`;
+
+  try {
+    // Đảm bảo URL hợp lệ để parse
+    const urlToParse = originalUrl.startsWith('http') ? originalUrl : `http://${originalUrl}`;
+    const urlObj = new URL(urlToParse);
+    const params = new URLSearchParams(urlObj.search);
+    const utmValues: string[] = [];
+    
+    // Chỉ lấy GIÁ TRỊ của các tham số UTM, bỏ qua tên tham số (utm_source...)
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(key => {
+      const value = params.get(key);
+      if (value) utmValues.push(value);
+    });
+
+    if (utmValues.length > 0) {
+      // Nối các giá trị lại với nhau, ví dụ: ?facebook&social&summer
+      shortUrl += `?${utmValues.join('&')}`;
+    }
+  } catch (e) {
+    // Bỏ qua nếu lỗi parse URL
+  }
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(shortUrl);

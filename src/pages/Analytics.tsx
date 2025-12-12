@@ -74,7 +74,7 @@ const COLORS = ['#ff6b4a', '#8b5cf6', '#14b8a6', '#f59e0b'];
 export default function Analytics() {
   const { shortCode } = useParams<{ shortCode: string }>();
 
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const baseUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   // Assume you have an API endpoint to get a single URL's data
   // e.g., urlApi.getByShortCode(shortCode)

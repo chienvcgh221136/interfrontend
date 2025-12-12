@@ -51,7 +51,7 @@ export default function AdminLinks() {
   const [editOriginalUrl, setEditOriginalUrl] = useState('');
   const [editShortCode, setEditShortCode] = useState('');
 
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const baseUrl = import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const { data: urls = [], isLoading } = useQuery<UrlData[]>({
     queryKey: ['adminAllUrls'],
@@ -248,7 +248,7 @@ export default function AdminLinks() {
                 <Label htmlFor="edit-short-code">Short Code</Label>
                 <div className="flex items-center">
                   <span className="px-3 py-2 bg-muted border border-r-0 border-border rounded-l-md text-sm text-muted-foreground">
-                    {`${(import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/https?:\/\//, '')}/`}
+                    {`${(import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/https?:\/\//, '')}/`}
                   </span>
                   <Input
                     id="edit-short-code"
